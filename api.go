@@ -31,7 +31,9 @@ func decodeRequest(r *http.Request) (string, error) {
 func GetMetrics(w http.ResponseWriter, r *http.Request, metrics *Metrics) {
 	w.Header().Set("Content-Type", "application/json")
 	//TODO threadsafe read for metrics
-	json.NewEncoder(w).Encode(metrics)
+	if err := json.NewEncoder(w).Encode(metrics); err != nil {
+		panic(err)
+	}
 }
 
 func GetTime(w http.ResponseWriter, r *http.Request, metrics *Metrics) {

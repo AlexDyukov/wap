@@ -9,9 +9,6 @@ RUN apk update && apk add --no-cache git build-base
 WORKDIR /src
 COPY . .
 
-# Run unit tests
-RUN go test -v
-
 # Build
 RUN CGO_ENABLED=0 go build -o /bin/wap
 

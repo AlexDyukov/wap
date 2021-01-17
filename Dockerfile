@@ -3,24 +3,27 @@
 ############################
 FROM golang:alpine AS builder
 
-# install git to fetch dependencies and gcc for runtime/cgo
-RUN apk update && apk add --no-cache git build-base
+WORKDIR /usr/share/zoneinfo
+RUN apk update && apk --no-cache add tzdata zip
+# No compression needed because go's
+# tz loader doesn't handle compressed data.
+RUN zip -q -r -0 /zoneinfo.zip .
 
-WORKDIR /src
+WORKDIR /go/src/app
 COPY . .
-
-# Build
-RUN CGO_ENABLED=0 go build -o /bin/wap
+# Static build required so that we can safely copy the binary over.
+RUN CGO_ENABLED=0 go install -ldflags '-extldflags "-static"'
 
 ############################
-# STEP 2 build a small image
+# STEP 2 build small image
 ############################
 FROM scratch
 
-# default env vars
+# timezone data:
+ENV ZONEINFO /zoneinfo.zip
+COPY --from=builder /zoneinfo.zip /
+
+# app binary
 ENV LOGLEVEL INFO
-
-COPY --from=builder /bin/wap /wap
-
-# Run app
-ENTRYPOINT ["/wap"]
+COPY --from=builder /go/bin/app /app
+ENTRYPOINT ["/app"]

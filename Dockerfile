@@ -9,7 +9,7 @@ RUN apk update && apk --no-cache add tzdata zip
 # tz loader doesn't handle compressed data.
 RUN zip -q -r -0 /zoneinfo.zip .
 
-WORKDIR /go/src/app
+WORKDIR /go/src/wap
 COPY . .
 # Static build required so that we can safely copy the binary over.
 RUN CGO_ENABLED=0 go install -ldflags '-extldflags "-static"'
@@ -25,5 +25,5 @@ COPY --from=builder /zoneinfo.zip /
 
 # app binary
 ENV LOGLEVEL INFO
-COPY --from=builder /go/bin/app /app
-ENTRYPOINT ["/app"]
+COPY --from=builder /go/bin/wap /wap
+ENTRYPOINT ["/wap"]

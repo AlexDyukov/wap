@@ -1,9 +1,11 @@
 replicaCount: 1
 image:
-  repository: ghcr.io/alexdyukov/wap
+  repository: alexdyukov/wap
   pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "master"
+  # TODO hub.docker.com не триггериться по tag по automated builds,
+  # хотя build rules стоят как в примере "Match versions"
+  tag: "latest"
 
 imagePullSecrets: []
 nameOverride: ""

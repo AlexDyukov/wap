@@ -12,4 +12,6 @@ jobs:
       with:
         fetch-depth: 0
     - name: Tag
+      env:
+        GH_TOKEN: ${{ secrets.GH_TOKEN }}
       run: bash .github/ci_tag.sh

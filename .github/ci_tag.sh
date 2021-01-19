@@ -10,7 +10,7 @@ repo=$(basename $remote .git)
 
 # POST a new ref to repo via Github API
 curl -s -X POST https://api.github.com/repos/$REPO_OWNER/$repo/git/refs \
-	-H "Authorization: token ${secrets.GH_TOKEN}" \
+	-H "Authorization: token ${GH_TOKEN}" \
 	-d @- << EOF
 {
   "ref": "refs/tags/$semver",

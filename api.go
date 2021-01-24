@@ -10,12 +10,46 @@ import (
 type Metrics struct {
 	TotalProcessed uint64            `json:"totalProcessed"`
 	ByTzProcessed  map[string]uint64 `json:"byTZProcessed"`
+	total          chan int
+	bytz           chan string
 }
 
-func InitMetrics() Metrics {
-	m := Metrics{}
+func (m *Metrics) Init() {
+	if m.ByTzProcessed != nil {
+		return
+	}
 	m.ByTzProcessed = map[string]uint64{}
-	return m
+	m.total = make(chan int)
+	m.bytz = make(chan string)
+	go func(c <-chan int) {
+		for {
+			_, ok := <-c
+			if !ok {
+				return
+			}
+			m.TotalProcessed += 1
+		}
+	}(m.total)
+	go func(c <-chan string) {
+		for {
+			locname, ok := <-c
+			if !ok {
+				return
+			}
+			if _, ok := m.ByTzProcessed[locname]; !ok {
+				m.ByTzProcessed[locname] = 0
+			}
+			m.ByTzProcessed[locname] += 1
+		}
+	}(m.bytz)
+}
+
+func (m *Metrics) TotalInc() {
+	m.total <- 1
+}
+
+func (m *Metrics) ByTzInc(locname string) {
+	m.bytz <- locname
 }
 
 func decodeRequest(r *http.Request) (string, error) {
@@ -30,15 +64,13 @@ func decodeRequest(r *http.Request) (string, error) {
 
 func GetMetrics(w http.ResponseWriter, r *http.Request, metrics *Metrics) {
 	w.Header().Set("Content-Type", "application/json")
-	//TODO threadsafe read for metrics
 	if err := json.NewEncoder(w).Encode(metrics); err != nil {
-		panic(err)
+		fmt.Println(err)
 	}
 }
 
 func GetTime(w http.ResponseWriter, r *http.Request, metrics *Metrics) {
-	//TODO threadsafe update for metrics.TotalProcessed
-	metrics.TotalProcessed += 1
+	metrics.TotalInc()
 
 	locname, err := decodeRequest(r)
 	if err != nil {
@@ -55,10 +87,6 @@ func GetTime(w http.ResponseWriter, r *http.Request, metrics *Metrics) {
 		return
 	}
 
-	//TODO threadsafe update for metrics.ByTzProcessed
-	if _, ok := metrics.ByTzProcessed[locname]; !ok {
-		metrics.ByTzProcessed[locname] = 0
-	}
-	metrics.ByTzProcessed[locname] += 1
+	metrics.ByTzInc(locname)
 	fmt.Fprint(w, time.Now().In(loc))
 }

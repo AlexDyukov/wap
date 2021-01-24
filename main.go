@@ -9,7 +9,8 @@ import (
 )
 
 func main() {
-	metrics := InitMetrics()
+	var metrics Metrics
+	metrics.Init()
 
 	router := httprouter.New()
 
